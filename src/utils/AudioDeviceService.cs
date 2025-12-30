@@ -43,6 +43,13 @@ namespace LiveCaptionsTranslator.utils
                 return null;
             }
         }
+        
+        public static void Cleanup()
+        {
+            // Dispose the shared enumerator on application exit
+            sharedEnumerator?.Dispose();
+            sharedEnumerator = null;
+        }
     }
     
     public class AudioDeviceInfo

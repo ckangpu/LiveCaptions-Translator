@@ -19,6 +19,7 @@ namespace LiveCaptionsTranslator
         private static void OnProcessExit(object sender, EventArgs e)
         {
             Translator.TtsService?.Dispose();
+            AudioDeviceService.Cleanup();
             if (Translator.Window != null)
             {
                 LiveCaptionsHandler.RestoreLiveCaptions(Translator.Window);
