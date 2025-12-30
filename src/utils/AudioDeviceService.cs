@@ -4,6 +4,8 @@ namespace LiveCaptionsTranslator.utils
 {
     public class AudioDeviceService
     {
+        private static MMDeviceEnumerator? sharedEnumerator = null;
+        
         public static List<AudioDeviceInfo> EnumerateOutputDevices()
         {
             var devices = new List<AudioDeviceInfo>();
@@ -30,8 +32,11 @@ namespace LiveCaptionsTranslator.utils
                 
             try
             {
-                var enumerator = new MMDeviceEnumerator();
-                return enumerator.GetDevice(deviceId);
+                // Keep a shared enumerator instance alive for device references
+                if (sharedEnumerator == null)
+                    sharedEnumerator = new MMDeviceEnumerator();
+                    
+                return sharedEnumerator.GetDevice(deviceId);
             }
             catch
             {

@@ -121,6 +121,14 @@ namespace LiveCaptionsTranslator.utils
         public void Dispose()
         {
             cancellationTokenSource.Cancel();
+            try
+            {
+                processingTask.Wait(TimeSpan.FromSeconds(5)); // Wait up to 5 seconds for graceful shutdown
+            }
+            catch (AggregateException)
+            {
+                // Ignore cancellation exceptions during shutdown
+            }
             queueSemaphore.Dispose();
             cancellationTokenSource.Dispose();
         }

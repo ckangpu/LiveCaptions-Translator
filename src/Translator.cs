@@ -25,6 +25,7 @@ namespace LiveCaptionsTranslator
         }
         public static Caption? Caption => caption;
         public static Setting? Setting => setting;
+        public static TtsPlaybackService? TtsService => ttsService;
 
         public static bool LogOnlyFlag { get; set; } = false;
         public static bool FirstUseFlag { get; set; } = false;
