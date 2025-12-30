@@ -15,6 +15,7 @@ namespace LiveCaptionsTranslator
     {
         private System.Windows.Controls.Button currentSelected;
         private Dictionary<string, FrameworkElement> sectionReferences;
+        private List<AudioDeviceInfo> audioDevices = new();
 
         public SettingWindow()
         {
@@ -26,8 +27,30 @@ namespace LiveCaptionsTranslator
             {
                 SystemThemeWatcher.Watch(this, WindowBackdropType.Mica, true);
                 Initialize();
+                LoadAudioDevices();
                 SelectButton(PromptButton);
             };
+        }
+        
+        private void LoadAudioDevices()
+        {
+            try
+            {
+                audioDevices = AudioDeviceService.EnumerateOutputDevices();
+                TtsDeviceComboBox.ItemsSource = audioDevices;
+                
+                // Set selected device if it exists
+                if (!string.IsNullOrEmpty(Translator.Setting?.TtsDeviceId))
+                {
+                    var selectedDevice = audioDevices.FirstOrDefault(d => d.Id == Translator.Setting.TtsDeviceId);
+                    if (selectedDevice != null)
+                        TtsDeviceComboBox.SelectedItem = selectedDevice;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to enumerate audio devices: {ex.Message}");
+            }
         }
 
         private void Initialize()
@@ -35,7 +58,8 @@ namespace LiveCaptionsTranslator
             sectionReferences = new Dictionary<string, FrameworkElement>
             {
                 { "General", ContentPanel },
-                { "Prompt", PromptSection }
+                { "Prompt", PromptSection },
+                { "Tts", TtsSection }
             };
             
             foreach (var apiName in TranslateAPI.TRANSLATE_FUNCTIONS.Keys.Where(apiName =>
@@ -156,6 +180,21 @@ namespace LiveCaptionsTranslator
                 currentSelected.Background = new SolidColorBrush(Colors.Transparent);
             button.Background = (Brush)FindResource("ControlFillColorSecondaryBrush");
             currentSelected = button;
+        }
+        
+        private void TtsEnabledToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            Translator.UpdateTtsConfiguration();
+        }
+        
+        private void TtsDeviceComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            Translator.UpdateTtsConfiguration();
+        }
+        
+        private void TtsVoice_LostFocus(object sender, RoutedEventArgs e)
+        {
+            Translator.UpdateTtsConfiguration();
         }
     }
 }
