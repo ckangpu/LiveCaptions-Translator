@@ -1,161 +1,42 @@
+using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
 using LiveCaptionsTranslator.models;
 using LiveCaptionsTranslator.utils;
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
-using Button = Wpf.Ui.Controls.Button;
-using TextBlock = Wpf.Ui.Controls.TextBlock;
 
-namespace LiveCaptionsTranslator
+namespace LiveCaptionsTranslator.windows
 {
-    public partial class SettingWindow : FluentWindow
+    public partial class SettingWindow : Window
     {
-        private System.Windows.Controls.Button currentSelected;
-        private Dictionary<string, FrameworkElement> sectionReferences;
+        private readonly Setting _setting;
 
-        public SettingWindow()
+        public SettingWindow(Setting setting)
         {
             InitializeComponent();
-            ApplicationThemeManager.ApplySystemTheme();
-            DataContext = Translator.Setting;
+            _setting = setting;
 
-            Loaded += (sender, args) =>
-            {
-                SystemThemeWatcher.Watch(this, WindowBackdropType.Mica, true);
-                Initialize();
-                SelectButton(PromptButton);
-            };
-        }
+            EnableTtsCheckBox.IsChecked = _setting.EnableTts;
+            TtsVoiceTextBox.Text = _setting.TtsVoice;
 
-        private void Initialize()
-        {
-            sectionReferences = new Dictionary<string, FrameworkElement>
-            {
-                { "General", ContentPanel },
-                { "Prompt", PromptSection }
-            };
-            
-            foreach (var apiName in TranslateAPI.TRANSLATE_FUNCTIONS.Keys.Where(apiName =>
-                         !TranslateAPI.NO_CONFIG_APIS.Contains(apiName)))
-            {
-                sectionReferences[apiName] = FindName($"{apiName}Section") as StackPanel;
-                SwitchConfig(apiName, Translator.Setting.ConfigIndices[apiName]);
-            }
-        }
-        
-        private void NewButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                string apiName = button.Tag as string;
-                var configs = Translator.Setting.Configs[apiName];
-                var configIndex = Translator.Setting.ConfigIndices[apiName];
-                
-                var type = Type.GetType($"LiveCaptionsTranslator.models.{apiName}Config");
-                var config = Activator.CreateInstance(type) as TranslateAPIConfig;
-                configs.Insert(configIndex + 1, config);
-                SwitchConfig(apiName, configIndex + 1);
-                
-                Translator.Setting.OnPropertyChanged("Configs");
-            }
-        }
-        
-        private void DeleteButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                string apiName = button.Tag as string;
-                var configs = Translator.Setting.Configs[apiName];
-                var configIndex = Translator.Setting.ConfigIndices[apiName];
-
-                if (configs.Count <= 1)
-                {
-                    (FindName($"{apiName}DeleteFlyout") as Flyout)?.Show();
-                    return;
-                }
-                configs.RemoveAt(configIndex);
-                SwitchConfig(apiName, Math.Max(0, Math.Min(configs.Count - 1, configIndex)));
-                
-                Translator.Setting.OnPropertyChanged("Configs");
-            }
+            var devices = AudioDeviceService.GetRenderDevices();
+            devices.Insert(0, new AudioDeviceInfo { Id = "", Name = "(System default)" });
+            TtsOutputDeviceComboBox.ItemsSource = devices;
+            TtsOutputDeviceComboBox.SelectedValue = _setting.TtsOutputDeviceId ?? "";
         }
 
-        private void PriorButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button)
-            {
-                string apiName = button.Tag as string;
-                var configIndex = Translator.Setting.ConfigIndices[apiName];
-                SwitchConfig(apiName, configIndex - 1);
-            }
-        }
-        
-        private void NextButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                string apiName = button.Tag as string;
-                var configIndex = Translator.Setting.ConfigIndices[apiName];
-                SwitchConfig(apiName, configIndex + 1);
-            }
+            _setting.EnableTts = EnableTtsCheckBox.IsChecked == true;
+            _setting.TtsVoice = TtsVoiceTextBox.Text.Trim();
+            var selected = (string?)TtsOutputDeviceComboBox.SelectedValue;
+            _setting.TtsOutputDeviceId = string.IsNullOrWhiteSpace(selected) ? null : selected;
+            DialogResult = true;
+            Close();
         }
 
-        private void NavigationButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.Button button)
-            {
-                SelectButton(button);
-                string targetSection = button.Tag.ToString();
-                if (sectionReferences.TryGetValue(targetSection, out FrameworkElement element))
-                    element.BringIntoView();
-            }
-        }
-
-        private void OpenAIAPIUrlInfo_MouseEnter(object sender, MouseEventArgs e)
-        {
-            OpenAIAPIUrlInfoFlyout.Show();
-        }
-
-        private void OpenAIAPIUrlInfo_MouseLeave(object sender, MouseEventArgs e)
-        {
-            OpenAIAPIUrlInfoFlyout.Hide();
-        }
-        
-        private void OllamaAPIUrlInfo_MouseEnter(object sender, MouseEventArgs e)
-        {
-            OllamaAPIUrlInfoFlyout.Show();
-        }
-
-        private void OllamaAPIUrlInfo_MouseLeave(object sender, MouseEventArgs e)
-        {
-            OllamaAPIUrlInfoFlyout.Hide();
-        }
-        
-        private void SwitchConfig(string apiName, int index)
-        {
-            if (index < 0 || index >= Translator.Setting.Configs[apiName].Count)
-                return;
-            
-            if (Translator.Setting.ConfigIndices[apiName] != index)
-                Translator.Setting.ConfigIndices[apiName] = index;
-            
-            if (FindName($"{apiName}Index") is TextBlock indexTextBlock)
-            {
-                int total = Translator.Setting.Configs[apiName].Count;
-                indexTextBlock.Text = $"{index + 1}/{total}";
-            }
-            Translator.Setting.OnPropertyChanged(null);
-        }
-        
-        private void SelectButton(System.Windows.Controls.Button button)
-        {
-            if (currentSelected != null)
-                currentSelected.Background = new SolidColorBrush(Colors.Transparent);
-            button.Background = (Brush)FindResource("ControlFillColorSecondaryBrush");
-            currentSelected = button;
+            DialogResult = false;
+            Close();
         }
     }
 }
