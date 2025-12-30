@@ -40,6 +40,7 @@ namespace LiveCaptionsTranslator.utils
             }
             catch
             {
+                // Device may have been disconnected or is invalid - return null to use default device
                 return null;
             }
         }
