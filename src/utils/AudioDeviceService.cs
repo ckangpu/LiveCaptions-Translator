@@ -23,17 +23,15 @@ namespace LiveCaptionsTranslator.utils
             return devices;
         }
         
-        public static MMDevice? GetDeviceById(string deviceId)
+        public static MMDevice? GetDeviceById(string? deviceId)
         {
             if (string.IsNullOrEmpty(deviceId))
                 return null;
                 
             try
             {
-                using (var enumerator = new MMDeviceEnumerator())
-                {
-                    return enumerator.GetDevice(deviceId);
-                }
+                var enumerator = new MMDeviceEnumerator();
+                return enumerator.GetDevice(deviceId);
             }
             catch
             {
