@@ -13,6 +13,7 @@ namespace LiveCaptionsTranslator
         private static AutomationElement? window = null;
         private static Caption? caption = null;
         private static Setting? setting = null;
+        private static TtsPlaybackService? ttsService = null;
 
         private static readonly Queue<string> pendingTextQueue = new();
         private static readonly TranslationTaskQueue translationTaskQueue = new();
@@ -24,6 +25,7 @@ namespace LiveCaptionsTranslator
         }
         public static Caption? Caption => caption;
         public static Setting? Setting => setting;
+        public static TtsPlaybackService? TtsService => ttsService;
 
         public static bool LogOnlyFlag { get; set; } = false;
         public static bool FirstUseFlag { get; set; } = false;
@@ -41,6 +43,18 @@ namespace LiveCaptionsTranslator
 
             caption = Caption.GetInstance();
             setting = Setting.Load();
+            
+            // Initialize TTS service
+            ttsService = new TtsPlaybackService();
+            UpdateTtsConfiguration();
+        }
+        
+        public static void UpdateTtsConfiguration()
+        {
+            if (ttsService != null && setting != null)
+            {
+                ttsService.Configure(setting.TtsEnabled, setting.TtsDeviceId, setting.TtsVoice);
+            }
         }
 
         public static void SyncLoop()
@@ -226,6 +240,12 @@ namespace LiveCaptionsTranslator
                         Caption.OverlayTranslatedCaption = noticePrefix + Caption.OverlayPreviousTranslation + translation;
                         // Caption.OverlayTranslatedCaption =
                         //     TextUtil.ShortenDisplaySentence(Caption.OverlayTranslatedCaption, TextUtil.VERYLONG_THRESHOLD);
+                        
+                        // TTS: Speak completed sentences only
+                        if (isChoke && Setting != null && Setting.TtsEnabled && !string.IsNullOrWhiteSpace(translation))
+                        {
+                            ttsService?.Enqueue(translation);
+                        }
                     }
                 }
 

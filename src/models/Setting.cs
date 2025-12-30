@@ -23,6 +23,10 @@ namespace LiveCaptionsTranslator.models
         private string targetLanguage;
         private string prompt;
         private string? ignoredUpdateVersion;
+        
+        private bool ttsEnabled = false;
+        private string? ttsDeviceId = null;
+        private string ttsVoice = "zh-CN-XiaoxiaoNeural";
 
 
         private MainWindowState mainWindowState;
@@ -86,6 +90,36 @@ namespace LiveCaptionsTranslator.models
             {
                 ignoredUpdateVersion = value;
                 OnPropertyChanged("IgnoredUpdateVersion");
+            }
+        }
+        
+        public bool TtsEnabled
+        {
+            get => ttsEnabled;
+            set
+            {
+                ttsEnabled = value;
+                OnPropertyChanged("TtsEnabled");
+            }
+        }
+        
+        public string? TtsDeviceId
+        {
+            get => ttsDeviceId;
+            set
+            {
+                ttsDeviceId = value;
+                OnPropertyChanged("TtsDeviceId");
+            }
+        }
+        
+        public string TtsVoice
+        {
+            get => ttsVoice;
+            set
+            {
+                ttsVoice = value;
+                OnPropertyChanged("TtsVoice");
             }
         }
 
