@@ -4,7 +4,8 @@ namespace LiveCaptionsTranslator.utils
 {
     public class AudioDeviceService
     {
-        private static MMDeviceEnumerator? sharedEnumerator = null;
+        private static readonly Lazy<MMDeviceEnumerator> sharedEnumerator = 
+            new Lazy<MMDeviceEnumerator>(() => new MMDeviceEnumerator());
         
         public static List<AudioDeviceInfo> EnumerateOutputDevices()
         {
@@ -32,11 +33,8 @@ namespace LiveCaptionsTranslator.utils
                 
             try
             {
-                // Keep a shared enumerator instance alive for device references
-                if (sharedEnumerator == null)
-                    sharedEnumerator = new MMDeviceEnumerator();
-                    
-                return sharedEnumerator.GetDevice(deviceId);
+                // Use thread-safe lazy initialization for shared enumerator
+                return sharedEnumerator.Value.GetDevice(deviceId);
             }
             catch
             {

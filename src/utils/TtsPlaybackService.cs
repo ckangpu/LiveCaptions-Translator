@@ -123,7 +123,11 @@ namespace LiveCaptionsTranslator.utils
             cancellationTokenSource.Cancel();
             try
             {
-                processingTask.Wait(TimeSpan.FromSeconds(5)); // Wait up to 5 seconds for graceful shutdown
+                // Use GetAwaiter().GetResult() to avoid potential deadlock with Wait()
+                if (!processingTask.IsCompleted)
+                {
+                    Task.WhenAny(processingTask, Task.Delay(TimeSpan.FromSeconds(5))).GetAwaiter().GetResult();
+                }
             }
             catch (AggregateException)
             {
