@@ -71,7 +71,7 @@ namespace LiveCaptionsTranslator.utils
                 
             try
             {
-                // Synthesize speech
+                // Synthesize speech - use class-level cancellation token for consistent cancellation
                 var audioData = await EdgeTtsClient.SynthesizeTextToSpeechAsync(text, voiceName, cancellationTokenSource.Token);
                 
                 if (audioData == null || audioData.Length == 0)
@@ -123,10 +123,20 @@ namespace LiveCaptionsTranslator.utils
             cancellationTokenSource.Cancel();
             try
             {
-                // Use GetAwaiter().GetResult() to avoid potential deadlock with Wait()
-                if (!processingTask.IsCompleted)
+                // Use timeout with proper cancellation to avoid resource leaks
+                using (var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
                 {
-                    Task.WhenAny(processingTask, Task.Delay(TimeSpan.FromSeconds(5))).GetAwaiter().GetResult();
+                    if (!processingTask.IsCompleted)
+                    {
+                        try
+                        {
+                            processingTask.Wait(timeoutCts.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Timeout occurred, continue cleanup
+                        }
+                    }
                 }
             }
             catch (AggregateException)

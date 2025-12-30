@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -7,7 +6,6 @@ namespace LiveCaptionsTranslator.utils
 {
     public class EdgeTtsClient
     {
-        private static readonly HttpClient httpClient = new HttpClient();
         private const string EDGE_TTS_URL = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4";
         
         public static async Task<byte[]?> SynthesizeTextToSpeechAsync(string text, string voice = "zh-CN-XiaoxiaoNeural", CancellationToken cancellationToken = default)

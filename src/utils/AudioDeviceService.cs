@@ -11,16 +11,15 @@ namespace LiveCaptionsTranslator.utils
         {
             var devices = new List<AudioDeviceInfo>();
             
-            using (var enumerator = new MMDeviceEnumerator())
+            // Use shared enumerator for consistency
+            var enumerator = sharedEnumerator.Value;
+            foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
             {
-                foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+                devices.Add(new AudioDeviceInfo
                 {
-                    devices.Add(new AudioDeviceInfo
-                    {
-                        Id = device.ID,
-                        Name = device.FriendlyName
-                    });
-                }
+                    Id = device.ID,
+                    Name = device.FriendlyName
+                });
             }
             
             return devices;
